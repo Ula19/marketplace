@@ -39,6 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'drf_spectacular',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+
     'apps.accounts',
     'apps.profiles',
     'apps.sellers',
@@ -133,3 +137,37 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 AUTH_USER_MODEL = 'accounts.User'
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "My First API",  # название проекта
+    "VERSION": "0.0.1",  # версия проекта
+    "SERVE_INCLUDE_SCHEMA": False,  # исключить эндпоинт /schema
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,  # не сбрасывать авторизацию
+    },
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+}
+
+
+"""
+{
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc2OTY4NjM0MywiaWF0IjoxNzY3MDk0MzQzLCJqdGkiOiI0M2ZjYTk3ZmY2Y2M0NmFlYTc3NjQyOGNiZjY5MTJiMyIsInVzZXJfaWQiOiIzYzA4YWE1NC00OGZjLTRlMzEtYTFkNi1kOGUzMzllMDg4M2IiLCJncm91cCI6ImFkbWluIn0.-N1fM-1-2fMYiv4HZcFqS-AVHWwBDYi9n_Fed9-SnZw",
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3Njk5MTQzLCJpYXQiOjE3NjcwOTQzNDMsImp0aSI6IjJhYTY4YjQzZTc5ZDQxNjJhMmUyNzU2MzNmYTYwNWY4IiwidXNlcl9pZCI6IjNjMDhhYTU0LTQ4ZmMtNGUzMS1hMWQ2LWQ4ZTMzOWUwODgzYiIsImdyb3VwIjoiYWRtaW4ifQ.OGGc4BM5fXkdlvQue_EoqCk310OIYKO1KMBqFYfnWy4"
+}
+"""
