@@ -2,10 +2,11 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-
-from apps.shop.serializers import CategorySerializer, ProductSerializer
+from apps.shop.serializers import (CategorySerializer, ProductSerializer, OrderItemSerializer, ToggleCartItemSerializer,
+                                   CheckoutSerializer, OrderSerializer)
 from apps.shop.models import Category, Product
 from apps.sellers.models import Seller
+from apps.profiles.models import OrderItem, ShippingAddress, Order
 
 
 tags = ["Shop"]
@@ -119,3 +120,108 @@ class ProductView(APIView):
             return Response(data={"message": "Товар не существует!"}, status=404)
         serializer = self.serializer_class(product)
         return Response(data=serializer.data, status=200)
+
+
+class CartView(APIView):
+    serializer_class = OrderItemSerializer
+
+    @extend_schema(
+        summary="Товары в корзине",
+        description="""
+            Этот эндпоинт возвращает все товары в корзине пользователя.
+        """,
+        tags=tags,
+    )
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        orderitems = OrderItem.objects.filter(user=user, order=None).select_related(
+            "product", "product__seller", "product__seller__user")
+        serializer = self.serializer_class(orderitems, many=True)
+        return Response(data=serializer.data)
+
+    @extend_schema(
+        summary="Переключить товар в корзине",
+        description="""
+            Этот эндпоинт позволяет пользователю или гостю добавлять/обновлять/удалять товар в корзине.
+            Если количество равно 0, товар удаляется из корзины.
+        """,
+        tags=tags,
+        request=ToggleCartItemSerializer,
+    )
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        serializer = ToggleCartItemSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        quantity = data["quantity"]
+
+        product = Product.objects.select_related("seller", "seller__user").get_or_none(slug=data["slug"])
+        if not product:
+            return Response({"message": "Нет продукта с таким slug"}, status=404)
+        orderitem, created = OrderItem.objects.update_or_create(
+            user=user,
+            order=None,
+            product=product,
+            defaults={"quantity": quantity},
+        )
+        resp_message_substring = "Updated In"
+        status_code = 200
+        if created:
+            status_code = 201
+            resp_message_substring = "Added To"
+        if orderitem.quantity == 0:
+            resp_message_substring = "Removed From"
+            orderitem.delete()
+            data = None
+        if resp_message_substring != "Removed From":
+            serializer = self.serializer_class(orderitem)
+            data = serializer.data
+        return Response(data={"message": f"Item {resp_message_substring} Cart", "item": data}, status=status_code)
+
+
+class CheckoutView(APIView):
+    serializer_class = CheckoutSerializer
+
+    @extend_schema(
+        summary="Проверить",
+        description="""
+               Этот эндпоинт позволяет пользователю создать заказ, посредством которого затем можно произвести оплату.
+               """,
+        tags=tags,
+        request=CheckoutSerializer,
+    )
+    def post(self, request, *args, **kwargs):
+        # Перейти к оформлению заказа
+        user = request.user
+        orderitems = OrderItem.objects.filter(user=user, order=None)
+        if not orderitems.exists():
+            return Response({"message": "В корзине нет товаров"}, status=404)
+
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        shipping_id = data.get("shipping_id")
+        # Получаем информацию о доставке на основе идентификатора доставки, введенного пользователем.
+        shipping = ShippingAddress.objects.get_or_none(id=shipping_id)
+        if not shipping:
+            return Response({"message": "Нет адреса доставки с этим идентификатором."}, status=404)
+
+        fields_to_update = [
+            "full_name",
+            "email",
+            "phone",
+            "address",
+            "city",
+            "country",
+            "zipcode",
+        ]
+        data = {}
+        for field in fields_to_update:
+            value = getattr(shipping, field)
+            data[field] = value
+
+        order = Order.objects.create(user=user, **data)
+        orderitems.update(order=order)
+
+        serializer = OrderSerializer(order)
+        return Response(data={"message": "Checkout Successful", "item": serializer.data}, status=200)

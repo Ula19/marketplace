@@ -66,7 +66,8 @@ class Order(BaseModel):
     address = models.CharField(null=True, max_length=1000)
     city = models.CharField(null=True, max_length=200)
     country = models.CharField(null=True, max_length=100)
-    zip_code = models.CharField(null=True, max_length=6)
+    zipcode = models.CharField(null=True, max_length=6)
+
 
     def __str__(self):
         return f'{self.user.full_name}\'s order'
@@ -75,6 +76,17 @@ class Order(BaseModel):
         if not self.created_at:
             self.tx_ref = generate_unique_code(Order, 'tx_ref')
         super().save(*args, **kwargs)
+
+    @property
+    def get_cart_subtotal(self):
+        orderitems = self.orderitems.all()
+        total = sum([item.get_total for item in orderitems])
+        return total
+
+    @property
+    def get_cart_total(self):
+        total = self.get_cart_subtotal
+        return total
 
 
 class OrderItem(BaseModel):
