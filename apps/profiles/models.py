@@ -21,19 +21,19 @@ class ShippingAddress(BaseModel):
 
 
 DELIVERY_STATUS_CHOICES = (
-    ("PENDING", "PENDING"),
-    ("PACKING", "PACKING"),
-    ("SHIPPING", "SHIPPING"),
-    ("ARRIVING", "ARRIVING"),
-    ("SUCCESS", "SUCCESS"),
+    ("PENDING", "В ОЖИДАНИИ"),
+    ("PACKING", "УПАКОВКА"),
+    ("SHIPPING", "ПЕРЕВОЗКA"),
+    ("ARRIVING", "ПРИБЫТИЕ"),
+    ("SUCCESS", "УСПЕХ"),
 )
 
 PAYMENT_STATUS_CHOICES = (
-    ("PENDING", "PENDING"),
-    ("PROCESSING", "PROCESSING"),
-    ("SUCCESSFUL", "SUCCESSFUL"),
-    ("CANCELLED", "CANCELLED"),
-    ("FAILED", "FAILED"),
+    ("PENDING", "В ОЖИДАНИИ"),
+    ("PROCESSING", "ОБРАБОТКА"),
+    ("SUCCESSFUL", "УСПЕШНЫЙ"),
+    ("CANCELLED", "ОТМЕНЕНО"),
+    ("FAILED", "НЕУСПЕШНЫЙ"),
 )
 
 

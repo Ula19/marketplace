@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-hbygi57e3mozax$g@3(bnex56q(+ne$+rlq48n#gv43_919qo*'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -37,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
 
     'rest_framework',
     'drf_spectacular',
@@ -83,12 +86,24 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('SQL_DATABASE', 'marketplace_db'),
+        'USER': os.getenv('SQL_USER', 'postgres'),
+        'PASSWORD': os.getenv('SQL_PASSWORD', 'postgres'),
+        'HOST': os.getenv('SQL_HOST', 'db'),  # 'db' - имя сервиса в docker-compose
+        'PORT': os.getenv('SQL_PORT', 5432),
     }
 }
+
 
 
 # Password validation
@@ -126,9 +141,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'web/static')
 
-MEDIA_ROOT = BASE_DIR / 'media'
+# MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'web/media')
 MEDIA_URL = '/media/'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -169,5 +187,10 @@ SIMPLE_JWT = {
 {
   "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MzcwNTQ1LCJpYXQiOjE3Njc3NjU3NDUsImp0aSI6IjNlMDQxNzBmMGUzNjQ0NjI4M2VhZWIyMzdjNWU0NjZhIiwidXNlcl9pZCI6IjNjMDhhYTU0LTQ4ZmMtNGUzMS1hMWQ2LWQ4ZTMzOWUwODgzYiIsImdyb3VwIjoiYWRtaW4ifQ._ZCD9dmcl7iQAeejDpqKavRHtY5cL3IDVbiClJxSHpw",
   "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDM1Nzc0NSwiaWF0IjoxNzY3NzY1NzQ1LCJqdGkiOiJjM2Y3NWQ4ZGVjMWM0ZDZiOTg3ZTIwMzA1ZWE4MzkxMyIsInVzZXJfaWQiOiIzYzA4YWE1NC00OGZjLTRlMzEtYTFkNi1kOGUzMzllMDg4M2IiLCJncm91cCI6ImFkbWluIn0.PYGtkbSE8QPsoBXh5yXd256ZayuK9ymqjxPXoIV0Y84"
+}
+
+{
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3MDQwMjEzNywiaWF0IjoxNzY3ODEwMTM3LCJqdGkiOiIzMmU4OWIxMDE0Yjg0NzBjYjk2YTJlODRiZjVkM2M0MyIsInVzZXJfaWQiOiI3MjI1ZWZlZS1hZThiLTQzMWMtYjA3Zi1hZTY3OTU3MGMwMjgiLCJncm91cCI6InVzZXIiLCJyb2xlIjoiQlVZRVIifQ.mezZzeMKJXsLqthMD78MSiSMI4JR4i83RSAgQ_AaJb0",
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDE0OTM3LCJpYXQiOjE3Njc4MTAxMzcsImp0aSI6Ijc0ZDA0MjI0NWRkNjQwOWI4NGY5ODY5YWI4OGVjMmRkIiwidXNlcl9pZCI6IjcyMjVlZmVlLWFlOGItNDMxYy1iMDdmLWFlNjc5NTcwYzAyOCIsImdyb3VwIjoidXNlciIsInJvbGUiOiJCVVlFUiJ9.x_1gbv65UDX-6J1Foqk12YnaRR03e8a__5XhwAPfaGs"
 }
 """

@@ -88,4 +88,7 @@ class OrderSerializer(serializers.Serializer):
         return ShippingAddressSerializer(obj).data
 
 
-
+class CheckItemOrderSerializer(serializers.Serializer):
+    product = ProductSerializer()
+    quantity = serializers.IntegerField()
+    total = serializers.FloatField(source="get_total")

@@ -1,7 +1,10 @@
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
+from apps.common.permissions import IsStaff, IsSeller, IsOwner
 from apps.shop.serializers import (CategorySerializer, ProductSerializer, OrderItemSerializer, ToggleCartItemSerializer,
                                    CheckoutSerializer, OrderSerializer)
 from apps.shop.models import Category, Product
@@ -14,6 +17,7 @@ tags = ["Shop"]
 
 class CategoriesView(APIView):
     serializer_class = CategorySerializer
+    permission_classes = [IsStaff]
 
     @extend_schema(
         summary='Категории Получить',
@@ -45,6 +49,7 @@ class CategoriesView(APIView):
 
 class ProductsByCategoryView(APIView):
     serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         operation_id="category_products",
@@ -65,6 +70,7 @@ class ProductsByCategoryView(APIView):
 
 class ProductsView(APIView):
     serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         operation_id="all_products",
@@ -72,16 +78,60 @@ class ProductsView(APIView):
         description="""
             Этот эндпоинт возвращает все продукты.
         """,
-        tags=tags
+        tags=tags,
+        parameters=[
+            OpenApiParameter(
+                name='max_price',
+                description='Фильтровать товары по MAX текущей цене',
+                required=False,
+                type=OpenApiTypes.INT
+            ),
+            OpenApiParameter(
+                name="min_price",
+                description="Фильтровать товары по MIN текущей цене",
+                required=False,
+                type=OpenApiTypes.INT,
+            ),
+        ]
     )
     def get(self, request, *args, **kwargs):
         products = Product.objects.select_related("category", "seller", "seller__user").all()
+
+        # Получаем параметры как строки
+        max_price_str = request.GET.get('max_price')
+        min_price_str = request.GET.get('min_price')
+
+        # Преобразование и валидация
+        try:
+            max_price = int(max_price_str) if max_price_str else None
+            min_price = int(min_price_str) if min_price_str else None
+        except (ValueError, TypeError):
+            return Response(
+                data={"message": "min_price и max_price должны быть целыми числами"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Проверка логики: оба параметра заданы
+        if max_price is not None and min_price is not None:
+            if max_price <= min_price:
+                return Response(
+                    data={"message": "Максимальная цена должна быть больше минимальной"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Фильтрация (max_price/min_price — int или None)
+        if max_price is not None:
+            products = products.filter(price_current__lte=max_price)
+        if min_price is not None:
+            products = products.filter(price_current__gte=min_price)
+
         serializer = self.serializer_class(products, many=True)
         return Response(data=serializer.data, status=200)
 
 
 class ProductsBySellerView(APIView):
     serializer_class = ProductSerializer
+    permission_classes = [IsSeller]
 
     @extend_schema(
         summary="Продавец Товары Получить",
@@ -101,9 +151,11 @@ class ProductsBySellerView(APIView):
 
 class ProductView(APIView):
     serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, slug):
         product = Product.objects.get_or_none(slug=slug)
+        self.check_object_permissions(self.request, product)
         return product
 
     @extend_schema(
@@ -124,6 +176,7 @@ class ProductView(APIView):
 
 class CartView(APIView):
     serializer_class = OrderItemSerializer
+    permission_classes = [IsOwner]
 
     @extend_schema(
         summary="Товары в корзине",
@@ -181,6 +234,7 @@ class CartView(APIView):
 
 class CheckoutView(APIView):
     serializer_class = CheckoutSerializer
+    permission_classes = [IsOwner]
 
     @extend_schema(
         summary="Проверить",
