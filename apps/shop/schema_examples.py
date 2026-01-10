@@ -1,5 +1,6 @@
-from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
+from apps.common.paginations import CustomPagination
 
+from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
 
 
 PRODUCT_PARAM_EXAMPLE = [
@@ -26,5 +27,18 @@ PRODUCT_PARAM_EXAMPLE = [
         description="Фильтровать товары по названию",
         required=False,
         type=OpenApiTypes.STR,
+    ),
+    OpenApiParameter(
+        name="page",
+        description="Получить определенную страницу. По умолчанию 1",
+        required=False,
+        type=OpenApiTypes.INT,
+    ),
+    OpenApiParameter(
+        name="page_size",
+        description=f"Количество элементов на странице, которое вы хотите отобразить. По умолчанию"
+                    f" {CustomPagination.page_size}",
+        required=False,
+        type=OpenApiTypes.INT,
     ),
 ]

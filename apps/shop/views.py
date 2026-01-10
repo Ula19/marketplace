@@ -1,4 +1,3 @@
-from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework import status
 from rest_framework.views import APIView
@@ -6,6 +5,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
+from apps.common.paginations import CustomPagination
 from apps.common.permissions import IsStaff, IsSeller, IsOwner
 from apps.shop.serializers import (CategorySerializer, ProductSerializer, OrderItemSerializer, ToggleCartItemSerializer,
                                    CheckoutSerializer, OrderSerializer)
@@ -71,39 +71,43 @@ class ProductsByCategoryView(APIView):
         return Response(data=serializer.data, status=200)
 
 
-# class ProductsView(APIView):
-#     serializer_class = ProductSerializer
-#     permission_classes = [IsAuthenticated]
-#
-#     @extend_schema(
-#         operation_id="all_products",
-#         summary="Получение продукта",
-#         description="""
-#             Этот эндпоинт возвращает все продукты.
-#         """,
-#         tags=tags,
-#         parameters=PRODUCT_PARAM_EXAMPLE,
-#     )
-#     def get(self, request, *args, **kwargs):
-#         products = Product.objects.select_related("category", "seller", "seller__user").all()
-#         filterset = ProductFilter(request.query_params, queryset=products)
-#         if filterset.is_valid():
-#             queryset = filterset.qs
-#             serializer = self.serializer_class(queryset, many=True)
-#             return Response(data=serializer.data)
-#         return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@extend_schema(tags=tags)
-class ProductsView(ListAPIView):
+class ProductsView(APIView):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = ProductFilter
+    paginator_class = CustomPagination
 
-    def get_queryset(self):
+    @extend_schema(
+        operation_id="all_products",
+        summary="Получение продукта",
+        description="""
+            Этот эндпоинт возвращает все продукты.
+        """,
+        tags=tags,
+        parameters=PRODUCT_PARAM_EXAMPLE,
+    )
+    def get(self, request, *args, **kwargs):
         products = Product.objects.select_related("category", "seller", "seller__user").all()
-        return products
+        filterset = ProductFilter(request.query_params, queryset=products)
+        if filterset.is_valid():
+            queryset = filterset.qs
+            paginator = self.paginator_class()
+            paginated_queryset = paginator.paginate_queryset(queryset=queryset, request=request)
+            serializer = self.serializer_class(paginated_queryset, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# @extend_schema(tags=tags)
+# class ProductsView(ListAPIView):
+#     serializer_class = ProductSerializer
+#     permission_classes = [IsAuthenticated]
+#     filter_backends = [DjangoFilterBackend]
+#     filterset_class = ProductFilter
+#     pagination_class = CustomPagination
+#
+#     def get_queryset(self):
+#         products = Product.objects.select_related("category", "seller", "seller__user").all()
+#         return products
 
 
 class ProductsBySellerView(APIView):

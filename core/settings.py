@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
+from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
     'apps.sellers',
     'apps.shop',
     'apps.common',
+    'apps.reviews',
 ]
 
 MIDDLEWARE = [
@@ -163,6 +165,8 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    # 'PAGE_SIZE': 2
 }
 
 SPECTACULAR_SETTINGS = {
@@ -174,7 +178,6 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-from datetime import timedelta
 
 SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
