@@ -1,3 +1,4 @@
+from django.db.models import Avg
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
@@ -26,9 +27,17 @@ class ProductSerializer(serializers.Serializer):
     price_current = serializers.DecimalField(max_digits=10, decimal_places=2)
     category = CategorySerializer()
     in_stock = serializers.IntegerField()
+    avg = serializers.SerializerMethodField()
     image1 = serializers.ImageField()
     image2 = serializers.ImageField(required=False)
     image3 = serializers.ImageField(required=False)
+
+    def get_avg(self, product):
+        stats = product.reviews.filter(is_deleted=False).aggregate(
+            avg=Avg('rating'),
+            # total_count=Count('id')
+        )
+        return stats['avg']
 
 
 class CreateProductSerializer(serializers.Serializer):

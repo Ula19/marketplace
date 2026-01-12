@@ -191,7 +191,6 @@ class OrderItemsView(APIView):
             Этот эндпоинт возвращает список элементов конкретного заказа (товаров внутри заказа).
         """,
         tags=tags,
-
     )
     def get(self, request, **kwargs):
         order = Order.objects.get_or_none(tx_ref=kwargs["tx_ref"])
