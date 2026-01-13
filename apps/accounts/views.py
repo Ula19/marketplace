@@ -18,3 +18,8 @@ class RegisterAPIView(APIView):
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+
+
+class MyAPI(APIView):
+    def get(self, request):
+        return Response({'version': self.request.version})

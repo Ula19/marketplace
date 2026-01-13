@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework import status
+from rest_framework.throttling import UserRateThrottle, ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
@@ -21,6 +22,7 @@ tags = ["Shop"]
 class CategoriesView(APIView):
     serializer_class = CategorySerializer
     permission_classes = [IsStaff]
+    throttle_scope = 'user'
 
     @extend_schema(
         summary='Категории Получить',
@@ -75,6 +77,8 @@ class ProductsView(APIView):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
     paginator_class = CustomPagination
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'my_scope'
 
     @extend_schema(
         operation_id="all_products",
